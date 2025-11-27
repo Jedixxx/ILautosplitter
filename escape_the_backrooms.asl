@@ -49,23 +49,22 @@ startup
     vars.Uhara.AlertLoadless();
     //vars.Uhara.EnableDebug();
 
+    settings.Add("hub_auto_reset", false, "The Hub mode automatic reset");
+
     vars.HasStarted = false;
     vars.HasExited = false;
 }
 
 init
 {
-    // IntPtr gWorld = vars.Uhara.ScanRel(3, "48 8B 1D ?? ?? ?? ?? 48 85 DB 74 ?? 41 B0 01");
 	vars.Events = vars.Uhara.CreateTool("UnrealEngine", "Events");
     vars.Resolver.Watch<ulong>("LoadingStart", vars.Events.FunctionFlag("WB_LoadingScreen_C", "WB_LoadingScreen_C", "PreConstruct"));
+    vars.Resolver.Watch<ulong>("LoadingFromRestart", vars.Events.FunctionFlag("MP_PlayerController_C", "MP_PlayerController_C", "ServerNotifyLoadedWorld"));
     vars.Resolver.Watch<ulong>("LoadingFinish", vars.Events.FunctionFlag("MP_PlayerController_C", "MP_PlayerController_C", "ClientGotoState"));
     vars.Resolver.Watch<ulong>("LoadingEnding", vars.Events.FunctionFlag("", "", "ExecuteUbergraph_BP_ExitZone_GameEnding"));
-    vars.Resolver.Watch<ulong>("RestartLevel", vars.Events.FunctionFlag("WB_Button_RestartGame_C", "WB_Button_RestartGame_C", "BndEvt__WB_Button_Close_Button_K2Node_ComponentBoundEvent_0_OnButtonClickedEvent__DelegateSignature"));
-    vars.Resolver.Watch<byte>("IsInHubGM", vars.Events.FunctionParentPtr("BP_MyGameInstance_C", "BP_MyGameInstance_C", "CheckAchievementQueue"), 0x350);
+    vars.Resolver.Watch<ulong>("ReturnedToLobby", vars.Events.FunctionFlag("WB_Button_RestartGame_C", "WB_Button_RestartGame_C", "BndEvt__WB_Button_Close_Button_K2Node_ComponentBoundEvent_0_OnButtonClickedEvent__DelegateSignature"));
     vars.Resolver.Watch<ulong>("Death", vars.Events.FunctionFlag("GameEnd_UI_2_C", "GameEnd_UI_2_C", "PreConstruct"));
-    vars.Resolver.Watch<ulong>("ContinueButton", vars.Events.FunctionFlag("UI_Menu_Evaluation_C", "UI_Menu_Evaluation_C", "BndEvt__UI_Menu_Evaluation_UI_Menu_Button_K2Node_ComponentBoundEvent_1_OnClick__DelegateSignature"));
     vars.Resolver.Watch<ulong>("MainMenu", vars.Events.FunctionFlag("CheatManager", "CheatManager", "ReceiveInitCheatManager"));
-    // vars.Resolver.Watch<uint>("GWorldName", gWorld, 0x18);
 
     vars.WasEnding = false;
 	vars.LoadingState = true;
@@ -83,16 +82,13 @@ update
 {
     vars.Uhara.Update();
 
-    // var world = vars.Events.FNameToString(current.GWorldName);
-	// if (!string.IsNullOrEmpty(world) && world != "None") current.World = world;
-
-	if ((old.LoadingStart != current.LoadingStart) || (old.RestartLevel != current.RestartLevel) || (old.MainMenu != current.MainMenu) || (old.LoadingEnding != current.LoadingEnding)) vars.LoadingState = true;
+	if ((old.LoadingStart != current.LoadingStart) || (old.LoadingFromRestart != current.LoadingFromRestart) || (old.MainMenu != current.MainMenu) || (old.LoadingEnding != current.LoadingEnding)) vars.LoadingState = true;
     if (old.MainMenu != current.MainMenu) vars.HasExited = true;
     if ((old.LoadingFinish != current.LoadingFinish) && vars.LoadingState) {
         vars.LoadingState = false;
         vars.HasExited = false;
-        vars.WasEnding = false;
     }
+    if (old.LoadingFromRestart != current.LoadingFromRestart) vars.WasEnding = false;
 }
 
 split
@@ -112,7 +108,8 @@ split
 
 reset
 {
-    if ((current.IsInHubGM == 1) && ((((old.RestartLevel != current.RestartLevel) || (old.Death != current.Death)) && (old.LoadingStart != current.LoadingStart)) || (old.ContinueButton != current.ContinueButton))) return true;
+    if ((settings["hub_auto_reset"]) && (((old.ReturnedToLobby != current.ReturnedToLobby) || (old.Death != current.Death)) && (old.LoadingStart != current.LoadingStart))) return true;
+    //if (((old.ReturnedToLobby != current.ReturnedToLobby) || (old.Death != current.Death)) && (old.LoadingStart != current.LoadingStart)) return true;
 }
 
 isLoading
