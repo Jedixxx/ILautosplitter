@@ -2,11 +2,10 @@ state("Backrooms-Win64-Shipping") {}
 
 startup
 {
-	Assembly.Load(File.ReadAllBytes("Components/uhara9")).CreateInstance("Main");
+    Assembly.Load(File.ReadAllBytes("Components/uhara9")).CreateInstance("Main");
     vars.Uhara.AlertLoadless();
     //vars.Uhara.EnableDebug();
 
-    settings.Add("hub_auto_reset", true, "The Hub mode automatic reset");
     settings.Add("level0_splits", false, "[Level 0 IL Splits] Splits on first log, restart and pitfall enter (Solo Any%)");
     settings.Add("carcodes_splits", false, "[Car Codes IL Splits] Splits on leaving codepad and elevator activation (Solo Any%)");
     settings.Add("elevrooms_splits", false, "[Elev Rooms IL Splits] Splits on door opens (Solo Any%)");
@@ -24,7 +23,8 @@ startup
 
 init
 {
-	vars.Events = vars.Uhara.CreateTool("UnrealEngine", "Events");
+    IntPtr gWorld = vars.Uhara.ScanRel(3, "48 8B 1D ?? ?? ?? ?? 48 85 DB 74 ?? 41 B0 01");
+    vars.Events = vars.Uhara.CreateTool("UnrealEngine", "Events");
     vars.Resolver.Watch<ulong>("LoadingStart", vars.Events.FunctionFlag("WB_LoadingScreen_C", "WB_LoadingScreen_C", "PreConstruct"));
     vars.Resolver.Watch<ulong>("LoadingFinish", vars.Events.FunctionFlag("MP_PlayerController_C", "MP_PlayerController_C", "ClientGotoState"));
     vars.Resolver.Watch<ulong>("LoadingEnding", vars.Events.FunctionFlag("", "", "ExecuteUbergraph_BP_ExitZone_GameEnding"));
@@ -33,6 +33,7 @@ init
     vars.Resolver.Watch<ulong>("Death", vars.Events.FunctionFlag("GameEnd_UI_2_C", "GameEnd_UI_2_C", "PreConstruct"));
     vars.Resolver.Watch<ulong>("ContinueButton", vars.Events.FunctionFlag("UI_Menu_Evaluation_C", "UI_Menu_Evaluation_C", "BndEvt__UI_Menu_Evaluation_UI_Menu_Button_K2Node_ComponentBoundEvent_1_OnClick__DelegateSignature"));
     vars.Resolver.Watch<ulong>("MainMenu", vars.Events.FunctionFlag("CheatManager", "CheatManager", "ReceiveInitCheatManager"));
+    vars.Resolver.Watch<uint>("GWorldName", gWorld, 0x18);
 
     vars.WasEnding = false;
     vars.LoadingState = true;
@@ -40,7 +41,6 @@ init
     // IL Events
 
     // General
-    vars.Resolver.Watch<ulong>("JuicePickup", vars.Events.FunctionFlag("BP_Juice_C", "BP_Juice_C", "ReceiveBeginPlay")); 
     vars.Resolver.Watch<ulong>("CapsuleTouch", vars.Events.FunctionFlag("FancyMovementComponent", "CharMoveComp", "CapsuleTouched"));    
     vars.ilStage = 0;
     
@@ -105,14 +105,12 @@ update
         vars.LoadingState = true;
         vars.ilStage = 0; 
     }
-    if (old.RestartLevel != current.RestartLevel) {
-        vars.LoadingState = true;
-        vars.WasEnding = false;
-    }
+    if (old.RestartLevel != current.RestartLevel) vars.LoadingState = true;
     if (old.MainMenu != current.MainMenu) vars.HasExited = true;
     if ((old.LoadingFinish != current.LoadingFinish) && vars.LoadingState) {
         vars.LoadingState = false;
         vars.HasExited = false;
+        vars.WasEnding = false;
         vars.WasVendingDoorOpened = false;
         vars.WasPicturePuzzleDone = false;   
     }
@@ -209,16 +207,12 @@ split
     }
     
     // FOW
-    if ((vars.ilStage == 0 || vars.ilStage == 1) && (old.Level10Load != current.Level10Load)){
-        print("Fow Load");
+    if ((vars.ilStage == 0) && (old.Level10Load != current.Level10Load)){
+        // Dummy Stage
         vars.ilStage++;
-	return vars.ilStage == 2;
+	return false;
     }
-    if ((vars.ilStage == 2) && (old.JuicePickup != current.JuicePickup)){
-        vars.ilStage++;
-	return true;
-    }
-    if ((vars.ilStage == 3) && (old.JuicePickup != current.JuicePickup)){
+    if ((vars.ilStage == 3) && (old.Level10Load != current.Level10Load)){
         vars.ilStage = -1;
 	return true;
     }
@@ -261,7 +255,7 @@ reset
 
 isLoading
 {
-	return vars.LoadingState;
+    return vars.LoadingState;
 }
 
 onReset
