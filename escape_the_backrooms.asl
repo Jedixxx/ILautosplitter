@@ -15,7 +15,8 @@ startup
     settings.Add("fow_splits", false, "[FOW IL Splits] Splits on Restart and Second Juice Pickup (Solo Any%)");
     settings.Add("snackrooms_splits", false, "[Snackrooms IL Splits] Splits on typewriter enter and finish (Solo Any%)");
     settings.Add("hotelchase_splits", false, "[Hotel Chase IL Splits] Splits on lever pull and chainsaw door open (Solo Any%)");
-    settings.Add("grassrooms_splits", false, "[Grassrooms IL Splits] Splits on rope pickup and rope interact in grassrooms (Solo Any%)");
+    settings.Add("level551_splits", false, "[Level 55.1 IL Splits] Splits on each floor dropdown and restart (Solo Any%)");
+    settings.Add("grassrooms_splits", false, "[Grassrooms IL Splits] Splits on rope equip and rope interact in grassrooms (Solo Any%)");
 
     vars.HasStarted = false;
     vars.HasExited = false;
@@ -42,6 +43,7 @@ init
 
     // General
     vars.Resolver.Watch<ulong>("CapsuleTouch", vars.Events.FunctionFlag("FancyMovementComponent", "CharMoveComp", "CapsuleTouched"));    
+    vars.Resolver.Watch<ulong>("ScreenClear", vars.Events.FunctionFlag("BPCharacter_Demo_C", "BPCharacter_Demo_C", "ClearScreen"));    
     vars.ilStage = 0;
     
     // Level 0
@@ -83,7 +85,13 @@ init
     // Hotel Chase
     vars.Resolver.Watch<ulong>("DashLeverUsed", vars.Events.FunctionFlag("BP_Dash_Lever_C", "BP_Dash_Lever", "OnActorUsed"));
     vars.Resolver.Watch<ulong>("DashChainsawDoorOpened", vars.Events.FunctionFlag("BP_Plank_Door_C", "BP_Plank_Door", "OnActorUsed"));   
-
+    
+    // Level 55.1
+    vars.Resolver.Watch<ulong>("ClientUpdateLevelStreamingStatus", vars.Events.FunctionFlag("MP_PlayerController_C", "MP_PlayerController_C", "ClientUpdateLevelStreamingStatus"));    
+    vars.Resolver.Watch<ulong>("Level551Floor2Loaded", vars.Events.FunctionFlag("BP_Ceiling_1Light_Blue_C", "BP_Ceiling_Light1052", "ReceiveBeginPlay"));
+    vars.Resolver.Watch<ulong>("Level551Floor3Loaded", vars.Events.FunctionFlag("BP_LightManager_Tunnel_C", "BP_LightManager_Tunnel", "ReceiveBeginPlay"));
+    vars.Resolver.Watch<ulong>("Level511Load", vars.Events.FunctionFlag("MP_LevelTunnel_C", "MP_LevelTunnel_C", "ReadyToStartMatch"));    
+   
     // Grassrooms
     vars.Resolver.Watch<ulong>("RopePickup", vars.Events.FunctionFlag("BP_Rope_C", "BP_Rope_C", "ReceiveBeginPlay"));
     vars.Resolver.Watch<ulong>("UseRope", vars.Events.FunctionFlag("BP_RopeZone_C", "BP_RopeZone_C", "OnActorUsed"));
@@ -256,6 +264,32 @@ split
     	}
     }
     
+    // Level 55.1
+    if ((world == "TunnelLevel") && settings["level551_splits"]) {
+    	if ((vars.ilStage == 0) && (old.ScreenClear != current.ScreenClear)) {
+		// Dummy Stage
+        	vars.ilStage++;
+		return false;
+    	}
+    	if ((vars.ilStage == 1) && (old.ClientUpdateLevelStreamingStatus != current.ClientUpdateLevelStreamingStatus)) {
+        	vars.ilStage++;
+		return true;
+    	}
+    	if ((vars.ilStage == 2) && (old.Level551Floor2Loaded != current.Level551Floor2Loaded)) {
+        	vars.ilStage++;
+		return true;
+    	}
+    	if ((vars.ilStage == 3) && (old.Level551Floor3Loaded != current.Level551Floor3Loaded)){
+        	vars.ilStage++;
+		return true;
+    	}
+    	if ((vars.ilStage == 4) && (old.Level511Load != current.Level511Load)){
+        	vars.ilStage = -1;
+		return true;
+    	}
+    }
+
+
     // Grassrooms
     if ((world == "Grassrooms_Expanded") && settings["grassrooms_splits"]) {
     	if ((vars.ilStage == 0) && (old.RopePickup != current.RopePickup)){
