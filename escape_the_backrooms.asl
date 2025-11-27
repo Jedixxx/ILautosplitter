@@ -15,7 +15,7 @@ startup
     settings.Add("fow_splits", false, "[FOW IL Splits] Splits on Restart and Second Juice Pickup (Solo Any%)");
     settings.Add("snackrooms_splits", false, "[Snackrooms IL Splits] Splits on typewriter enter and finish (Solo Any%)");
     settings.Add("hotelchase_splits", false, "[Hotel Chase IL Splits] Splits on lever pull and chainsaw door open (Solo Any%)");
-    settings.Add("grassroom_splits", false, "[Grassrooms IL Splits] Splits on rope pickup and rope interact in grassrooms (Solo Any%)");
+    settings.Add("grassrooms_splits", false, "[Grassrooms IL Splits] Splits on rope pickup and rope interact in grassrooms (Solo Any%)");
 
     vars.HasStarted = false;
     vars.HasExited = false;
@@ -136,115 +136,136 @@ split
     }
 
     // IL Splits
-    
+    string world = vars.Events.FNameToString(current.GWorldName);
+
     // Level 0
-    if ((vars.ilStage == 0) && (old.FirstLadderPieceUsed != current.FirstLadderPieceUsed)){
-        vars.ilStage++;
+    if ((world == "Level0") && settings["level0_splits"]) {
+        if ((vars.ilStage == 0) && (old.FirstLadderPieceUsed != current.FirstLadderPieceUsed)){
+        	vars.ilStage++;
+		return true;
+    	}
+    	if ((vars.ilStage == 1) && (old.Level0Load != current.Level0Load)){
+        	vars.ilStage++;
 	return true;
-    }
-    if ((vars.ilStage == 1) && (old.Level0Load != current.Level0Load)){
-        vars.ilStage++;
-	return true;
-    }
-    if ((vars.ilStage == 2) && (old.EnterPitfalls != current.EnterPitfalls)) {
-	vars.ilStage = -1;
-	return true;
+    	}
+    	if ((vars.ilStage == 2) && (old.EnterPitfalls != current.EnterPitfalls)) {
+		vars.ilStage = -1;
+		return true;
+    	}
     }
 
     // Car Codes
-    if ((vars.ilStage == 0) && (old.LeaveColorPicker != current.LeaveColorPicker)){
-        vars.ilStage++;
+    if ((world == "TopFloor") && settings["carcodes_splits"]) {
+    	if ((vars.ilStage == 0) && (old.LeaveColorPicker != current.LeaveColorPicker)){
+        	vars.ilStage++;
 	return true;
-    }
-    if ((vars.ilStage == 1) && (old.CarCodesElevatorButtonClick != current.CarCodesElevatorButtonClick)) {
-	vars.ilStage = -1;
-	return true;
+    	}
+    	if ((vars.ilStage == 1) && (old.CarCodesElevatorButtonClick != current.CarCodesElevatorButtonClick)) {
+		vars.ilStage = -1;
+		return true;
+    	}
     }
 
     // Elevator Rooms
-    if ((vars.ilStage == 0) && (old.L2FirstDoorOpen != current.L2FirstDoorOpen)){
-        vars.ilStage++;
-	return true;
-    }
-    if ((vars.ilStage == 1) && (old.L2ElevDoorOpen != current.L2ElevDoorOpen)) {
-	vars.ilStage = -1;
-	return true;
+    if ((world == "GarageLevel2") && settings["elevrooms_splits"]) {
+    	if ((vars.ilStage == 0) && (old.L2FirstDoorOpen != current.L2FirstDoorOpen)){
+        	vars.ilStage++;
+		return true;
+    	}
+    	if ((vars.ilStage == 1) && (old.L2ElevDoorOpen != current.L2ElevDoorOpen)) {
+		vars.ilStage = -1;
+		return true;
+    	}
     }
 
     // Office
-    if ((vars.ilStage == 0) && (old.CapsuleTouch != current.CapsuleTouch) && (vars.WasVendingDoorOpened)){   
-        vars.ilStage++;
-	return true;
+    if ((world == "Office") && settings["office_splits"]) {
+    	if ((vars.ilStage == 0) && (old.CapsuleTouch != current.CapsuleTouch) && (vars.WasVendingDoorOpened)){   
+        	vars.ilStage++;
+		return true;
+    	}
+    	if ((vars.ilStage == 1) && (old.OfficeSkipDoorOpen != current.OfficeSkipDoorOpen)) {
+		vars.ilStage = -1;
+		return true;
+    	}    
     }
-    if ((vars.ilStage == 1) && (old.OfficeSkipDoorOpen != current.OfficeSkipDoorOpen)) {
-	vars.ilStage = -1;
-	return true;
-    }
-    
+
     // Main Hall
-    if ((vars.ilStage == 0) && (old.PicturePuzzleFinished != current.PicturePuzzleFinished)){
-        vars.WasPicturePuzzleDone = true;
-        vars.ilStage++;
-	return true;
-    }
-    if ((vars.ilStage == 1) && (vars.WasPicturePuzzleDone == true) && (old.CapsuleTouch != current.CapsuleTouch)){
-        vars.ilStage++; 
-	return true;
-    }
-    if ((vars.ilStage == 2) && (vars.WasPicturePuzzleDone == true) && (old.CapsuleTouch != current.CapsuleTouch)){
-        vars.ilStage = -1;
-	return true;
+    if ((world == "Hotel") && settings["mainhall_splits"]) {
+    	if ((vars.ilStage == 0) && (old.PicturePuzzleFinished != current.PicturePuzzleFinished)){
+        	vars.WasPicturePuzzleDone = true;
+        	vars.ilStage++;
+		return true;
+    	}
+    	if ((vars.ilStage == 1) && (vars.WasPicturePuzzleDone == true) && (old.CapsuleTouch != current.CapsuleTouch)){
+        	vars.ilStage++; 
+		return true;
+    	}
+    	if ((vars.ilStage == 2) && (vars.WasPicturePuzzleDone == true) && (old.CapsuleTouch != current.CapsuleTouch)){
+        	vars.ilStage = -1;
+		return true;
+    	}
     }
 
     // RFYL
-    if ((vars.ilStage == 0) && (old.SlideBed1 != current.SlideBed1)){
-        vars.ilStage++;
-	return true;
-    }
-    if ((vars.ilStage == 1) && (old.SlideBed2 != current.SlideBed2)) {
-	vars.ilStage = -1;
-	return true;
+    if ((world == "LevelRun") && settings["rfyl_splits"]) {
+    	if ((vars.ilStage == 0) && (old.SlideBed1 != current.SlideBed1)){
+        	vars.ilStage++;
+		return true;
+    	}
+    	if ((vars.ilStage == 1) && (old.SlideBed2 != current.SlideBed2)) {
+		vars.ilStage = -1;
+		return true;
+    	}
     }
     
     // FOW
-    if ((vars.ilStage == 0) && (old.Level10Load != current.Level10Load)){
-        // Dummy Stage
-        vars.ilStage++;
-	return false;
-    }
-    if ((vars.ilStage == 3) && (old.Level10Load != current.Level10Load)){
-        vars.ilStage = -1;
-	return true;
+    if ((world == "Level10") && settings["fow_splits"]) {
+    	if ((vars.ilStage == 0) && (old.Level10Load != current.Level10Load)){
+        	// Dummy Stage
+        	vars.ilStage++;
+		return false;
+    	}
+    	if ((vars.ilStage == 1) && (old.Level10Load != current.Level10Load)){
+        	vars.ilStage = -1;
+		return true;
+    	}
     }
 
     // Snackrooms 
-    if ((vars.ilStage == 0) && (old.TypeWriterClick != current.TypeWriterClick)){
-        vars.ilStage++;
-	return true;
-    }
-    if ((vars.ilStage == 1) && (old.TypeWriterCompleted != current.TypeWriterCompleted)) {
-	vars.ilStage = -1;
-	return true;
+    if ((world == "Snackrooms") && settings["snackrooms_splits"]) {
+    	if ((vars.ilStage == 0) && (old.TypeWriterClick != current.TypeWriterClick)){
+        	vars.ilStage++;
+		return true;
+    	}
+    	if ((vars.ilStage == 1) && (old.TypeWriterCompleted != current.TypeWriterCompleted)) {
+		vars.ilStage = -1;
+		return true;
+    	}
     }
 
     // Hotel Chase
-    if ((vars.ilStage == 0) && (old.DashLeverUsed != current.DashLeverUsed)){
-        vars.ilStage++;
-	return true;
-    }
-    if ((vars.ilStage == 1) && (old.DashChainsawDoorOpened != current.DashChainsawDoorOpened)) {
-	vars.ilStage = -1;
-	return true;
+    if ((world == "LevelDash") && settings["hotelchase_splits"]) {
+    	if ((vars.ilStage == 0) && (old.DashLeverUsed != current.DashLeverUsed)){
+        	vars.ilStage++;
+		return true;
+    	}
+    	if ((vars.ilStage == 1) && (old.DashChainsawDoorOpened != current.DashChainsawDoorOpened)) {
+		vars.ilStage = -1;
+		return true;
+    	}
     }
     
     // Grassrooms
-    if ((vars.ilStage == 0) && (old.RopePickup != current.RopePickup)){
-        vars.ilStage++;
-	return true;
-    }
-    if ((vars.ilStage == 1) && (old.UseRope != current.UseRope)) {
-	vars.ilStage = -1;
-	return true;
+    if ((world == "Grassrooms_Expanded") && settings["grassrooms_splits"]) {
+    	if ((vars.ilStage == 0) && (old.RopePickup != current.RopePickup)){
+        	vars.ilStage++;
+		return true;
+    	}
+    	if ((vars.ilStage == 1) && (old.UseRope != current.UseRope)) {
+		vars.ilStage = -1;
+		return true;
+    	}
     }
 }
 
