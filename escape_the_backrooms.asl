@@ -6,11 +6,12 @@ startup
     vars.Uhara.AlertLoadless();
     //vars.Uhara.EnableDebug();
 
-    settings.Add("level0_splits", false, "[Level 0 IL Splits] Splits on first log, restart and pitfall enter (Solo Any%)");
+    settings.Add("level0_splits", false, "[Level 0 IL Splits] Splits on restart and pitfall enter (Solo Any%)");
     settings.Add("carcodes_splits", false, "[Car Codes IL Splits] Splits on leaving codepad and elevator activation (Solo Any%)");
     settings.Add("elevrooms_splits", false, "[Elev Rooms IL Splits] Splits on door opens (Solo Any%)");
     settings.Add("office_splits", false, "[Office IL Splits] Splits on vending door enter and jump room door open (Solo Any%)");
     settings.Add("mainhall_splits", false, "[Main Hall IL Splits] Splits on puzzle finish and OOB clip 1 and 2 (Solo Any%)");
+    settings.Add("hotelcodes_splits", false, "[Hotel Codes IL Splits] Splits on padlock enter and finish (Solo Any%)");
     settings.Add("rfyl_splits", false, "[RFYL IL Splits] Splits on Sliding Bed 1 and Sliding Bed 2 (Solo Any%)");
     settings.Add("fow_splits", false, "[FOW IL Splits] Splits on Restart and Second Juice Pickup (Solo Any%)");
     settings.Add("snackrooms_splits", false, "[Snackrooms IL Splits] Splits on typewriter enter and finish (Solo Any%)");
@@ -47,7 +48,6 @@ init
     vars.ilStage = 0;
     
     // Level 0
-    vars.Resolver.Watch<ulong>("FirstLadderPieceUsed", vars.Events.FunctionFlag("BP_LadderPiece_C", "BP_LadderPiece", "OnActorUsed"));  
     vars.Resolver.Watch<ulong>("Level0Load", vars.Events.FunctionFlag("MP_Level0_C", "MP_Level0_C", "UserConstructionScript"));  
     vars.Resolver.Watch<ulong>("EnterPitfalls", vars.Events.FunctionFlag("BPCharacter_Demo_C", "BPCharacter_Demo_C", "BalanceTimeline__UpdateFunc"));  
     
@@ -71,6 +71,10 @@ init
     
     vars.WasPicturePuzzleDone = false;
 
+    // Hotel Corridors
+    vars.Resolver.Watch<ulong>("PadLockUsed", vars.Events.FunctionFlag("BP_PadLock_C", "BP_PadLock", "OnActorUsed"));  
+    vars.Resolver.Watch<ulong>("PadLockSolved", vars.Events.FunctionFlag("BP_PadLock_C", "BP_PadLock", "AnimationOpenLockLoop__UpdateFunc"));  
+
     // RFYL
     vars.Resolver.Watch<ulong>("SlideBed1", vars.Events.FunctionFlag("BP_Slide_C", "BP_Slide", "Roll__UpdateFunc"));
     vars.Resolver.Watch<ulong>("SlideBed2", vars.Events.FunctionFlag("BP_Slide_C", "BP_Slide2", "Roll__UpdateFunc"));
@@ -91,7 +95,7 @@ init
     vars.Resolver.Watch<ulong>("Level551Floor2Loaded", vars.Events.FunctionFlag("BP_Ceiling_1Light_Blue_C", "BP_Ceiling_Light1052", "ReceiveBeginPlay"));
     vars.Resolver.Watch<ulong>("Level551Floor3Loaded", vars.Events.FunctionFlag("BP_LightManager_Tunnel_C", "BP_LightManager_Tunnel", "ReceiveBeginPlay"));
     vars.Resolver.Watch<ulong>("Level511Load", vars.Events.FunctionFlag("MP_LevelTunnel_C", "MP_LevelTunnel_C", "ReadyToStartMatch"));    
-   
+
     // Grassrooms
     vars.Resolver.Watch<ulong>("RopePickup", vars.Events.FunctionFlag("BP_Rope_C", "BP_Rope_C", "ReceiveBeginPlay"));
     vars.Resolver.Watch<ulong>("UseRope", vars.Events.FunctionFlag("BP_RopeZone_C", "BP_RopeZone_C", "OnActorUsed"));
@@ -148,15 +152,11 @@ split
 
     // Level 0
     if ((world == "Level0") && settings["level0_splits"]) {
-        if ((vars.ilStage == 0) && (old.FirstLadderPieceUsed != current.FirstLadderPieceUsed)){
+    	if ((vars.ilStage == 0) && (old.Level0Load != current.Level0Load)){
         	vars.ilStage++;
 		return true;
     	}
-    	if ((vars.ilStage == 1) && (old.Level0Load != current.Level0Load)){
-        	vars.ilStage++;
-	return true;
-    	}
-    	if ((vars.ilStage == 2) && (old.EnterPitfalls != current.EnterPitfalls)) {
+    	if ((vars.ilStage == 1) && (old.EnterPitfalls != current.EnterPitfalls)) {
 		vars.ilStage = -1;
 		return true;
     	}
@@ -166,7 +166,7 @@ split
     if ((world == "TopFloor") && settings["carcodes_splits"]) {
     	if ((vars.ilStage == 0) && (old.LeaveColorPicker != current.LeaveColorPicker)){
         	vars.ilStage++;
-	return true;
+		return true;
     	}
     	if ((vars.ilStage == 1) && (old.CarCodesElevatorButtonClick != current.CarCodesElevatorButtonClick)) {
 		vars.ilStage = -1;
@@ -214,6 +214,19 @@ split
 		return true;
     	}
     }
+
+    // Hotel Codes
+    if ((world == "Floor3") && settings["hotelcodes_splits"]) {
+    	if ((vars.ilStage == 0) && (old.PadLockUsed != current.PadLockUsed)){
+        	vars.ilStage++;
+		return true;
+    	}
+    	if ((vars.ilStage == 1) && (old.PadLockSolved != current.PadLockSolved)) {
+		vars.ilStage = -1;
+		return true;
+    	}
+    }
+
 
     // RFYL
     if ((world == "LevelRun") && settings["rfyl_splits"]) {
@@ -288,7 +301,6 @@ split
 		return true;
     	}
     }
-
 
     // Grassrooms
     if ((world == "Grassrooms_Expanded") && settings["grassrooms_splits"]) {
